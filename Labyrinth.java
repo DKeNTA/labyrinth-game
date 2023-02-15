@@ -261,7 +261,7 @@ class LabyrinthPanel extends JPanel implements KeyListener, Runnable {
 		}
 	}
 
-  	// キャラクタ画像用
+  	// キャラクター画像用
   	private BufferedImage yakitoriImg, mikanImg, mikan2Img, dragonImg, fireImg, swordImg ;
   	private Image[] toriImg = new Image[5];
   	private int tori_x, tori_y, toriNo;
@@ -275,7 +275,7 @@ class LabyrinthPanel extends JPanel implements KeyListener, Runnable {
 	// 剣を持っているかどうか
 	private boolean getSword = false;
 
-  	// ドラゴンが存在しているかどうか
+  	// ドラゴンを倒したかどうか
 	private boolean beatDragon = false;
   
 	// 時間
@@ -369,16 +369,16 @@ class LabyrinthPanel extends JPanel implements KeyListener, Runnable {
             g.setColor(Color.orange);
             g.drawString("LABYRINTH", 340, 200);
 			g.setFont(new Font("TimeRoman", Font.BOLD, 50));
-			g.drawString("Take the Mikan", 400, 270);
+			g.drawString("Take the Mikan", 410, 270);
 			g.setFont(new Font("TimeRoman", Font.BOLD, 35));
             g.setColor(Color.green);
-            g.drawString("Press Enter!!", 475, 600);
+            g.drawString("Press Enter!!", 480, 600);
 		} else if (mode == 1){
 			// ゲーム画面描画
     		for (int y = 1; y <= MY; y++) {
       			for (int x = 1; x <= MX; x++) {
         			int xx = size*x+20, yy = size*y+20;
-        			switch ( map[y][x] ) {
+        			switch (map[y][x]) {
 					
         				case 'B': // ブロックの描画 
 							g.setColor(Color.green);
@@ -397,10 +397,10 @@ class LabyrinthPanel extends JPanel implements KeyListener, Runnable {
       			}
     		} 
     		// 鳥の描画 
-    		if (!toriGrill) {
-				toriDraw(g);
-			} else {
+    		if (toriGrill) {
 				yakitoriDraw(g);
+			} else {
+				toriDraw(g);
 			}
 
 			// ドラゴンの描画
@@ -412,9 +412,14 @@ class LabyrinthPanel extends JPanel implements KeyListener, Runnable {
 			}
 
 			if (gameOver) {
+				g.setColor(Color.black);
+				g.fillRect(100, 250, 955, 250);
 				g.setFont(new Font("TimeRoman", Font.BOLD, 150));
     			g.setColor(Color.red);
-    			g.drawString("GAME OVER", 100, 400);
+    			g.drawString("GAME OVER", 120, 400);
+				g.setFont(new Font("TimeRoman", Font.BOLD, 60));
+    			g.setColor(Color.yellow);
+    			g.drawString("Retry: Enter", 410, 470);
 			} else {
 				int dt = (int) (time - System.currentTimeMillis() * 0.001);
     			g.setFont(new Font("TimeRoman", Font.BOLD, 18));
@@ -427,13 +432,18 @@ class LabyrinthPanel extends JPanel implements KeyListener, Runnable {
 			// クリア画面描画
 			g.setFont(new Font("TimeRoman", Font.BOLD, 90));
     		g.setColor(Color.yellow);
-    		g.drawString("CONGRATULATIONS!", 70, 200);
-			g.setFont(new Font("TimeRoman", Font.BOLD, 50));
-			g.setColor(Color.cyan);
-			g.drawString("Your Time is " + clearTime + " seconds.", 300, 300);
+    		g.drawString("CONGRATULATIONS!", 90, 200);
+			// クリアタイム
+			//g.setFont(new Font("TimeRoman", Font.BOLD, 50));
+			//g.setColor(Color.cyan);
+			//g.drawString("Your Time is " + clearTime + " seconds.", 300, 300);
 
-			g.drawImage(toriImg[4], 320, 400, this); 
-			g.drawImage(mikan2Img, 570, 380, this); 
+			g.setFont(new Font("TimeRoman", Font.BOLD, 60));
+    		g.setColor(Color.yellow);
+    		g.drawString("Back to Title: Enter", 300, 700);
+
+			g.drawImage(toriImg[4], 320, 350, this); 
+			g.drawImage(mikan2Img, 570, 350, this); 
 		}
   	}
 
@@ -442,8 +452,6 @@ class LabyrinthPanel extends JPanel implements KeyListener, Runnable {
   	public void run() {
     	while (th != null && mode == 1) {
       		printLabyrinth();
-			
-			if (fire_x < 0 && !beatDragon) fireSet();  // 火球を再起的に発射する
 
 			// ドラゴンとの当たり判定
 			if ((tori_x >= dragon_x && tori_x <= dragon_x+2) && (tori_y >= dragon_y && tori_y <= dragon_y+2)) {
@@ -458,25 +466,33 @@ class LabyrinthPanel extends JPanel implements KeyListener, Runnable {
 			}
 
 			// 火球との当たり判定
-			if ((size*tori_x+25 >= fire_x && size*tori_x+25 <= fire_x + 80) && (size*tori_y+15 >= fire_y && size*tori_y+15 <= fire_y + 30)) {
+			if ((size*tori_x+25 >= fire_x && size*tori_x+25 <= fire_x+80) && (size*tori_y+15 >= fire_y && size*tori_y+15 <= fire_y + 30)) {
 				gameOver = true;
 			}
 			// ゴール判定
 			if (tori_x == goal_x && tori_y == goal_y) {
 				gameClear = true;
 				mode = 2;
-				end = System.currentTimeMillis();
-				clearTime = (end - start) * 0.001;
+				// end = System.currentTimeMillis();
+				// clearTime = (end - start) * 0.001;
 				repaint();
 				break;
 			}
 
+			if (beatDragon) dragonErase();
+
 			// 火球の移動
-			if (getSword) fire_x -= 50;  
+			if (getSword) fire_x -= 60;  
 			else fire_x -= 40; 
 
-			if (beatDragon) dragonErase();
-			if (gameOver) toriGrill = true;
+			// ゲームオーバーかつ火球が消えたら停止
+			if (gameOver) {
+				toriGrill = true;
+				if (fire_x < -80) break;
+			}
+
+			// 火球を再起的に発射する
+			if (fire_x < -80 && !beatDragon) fireSet();  
 
       		repaint(); 
       		sleep(100);
@@ -484,7 +500,7 @@ class LabyrinthPanel extends JPanel implements KeyListener, Runnable {
   	}
 
   	public void sleep(int time){
-    		try {Thread.sleep(time);}
+    		try { Thread.sleep(time); }
     		catch (InterruptedException e) {}
   	}
 
@@ -522,11 +538,17 @@ class LabyrinthPanel extends JPanel implements KeyListener, Runnable {
 				//	toriSet(start_x, start_y);
 				//	break;  
 				case KeyEvent.VK_ENTER: // ニューゲーム
-					mode = 0;	
+					if (gameOver) initGame();	
+					else mode = 0;
 					break;  
     		}
-    		repaint();
+		} else {
+			// タイトル画面
+			if (key == KeyEvent.VK_ENTER) {
+				mode = 0;
+			}
 		}
+		repaint();
     }
 
   	// KeyListenerのメソッドkeyReleased
@@ -537,7 +559,7 @@ class LabyrinthPanel extends JPanel implements KeyListener, Runnable {
   	@Override
    	public void keyTyped(KeyEvent e) { }
 
-  	// 鳥の各種メソッド定義 
+  	// トリの各種メソッド定義 
   	public void toriSet(int x, int y) {
     	tori_x = x;
     	tori_y = y;
@@ -570,26 +592,27 @@ class LabyrinthPanel extends JPanel implements KeyListener, Runnable {
     			case 3: dx = -1; break; // left
     		}
     		if (map[tori_y+dy][tori_x+dx] == 'B') return; // block
-			if (map[tori_y][tori_x] == 'S') getSword = true;
 
-    		tori_x += dx;
+			tori_x += dx;
 			tori_y += dy;
+
+			if (map[tori_y][tori_x] == 'S') getSword = true;	
 		} else return;
   	}
 
 	// 焼き鳥の描画メソッド
 	public void yakitoriDraw(Graphics g) {
-		g.drawImage(yakitoriImg, size*tori_x-30, size*tori_y-20, this);
+		g.drawImage(yakitoriImg, size*tori_x-30, size*tori_y-30, this);
 	}
 
 	// ドラゴンの各種メソッド定義
  	public void dragonDraw(Graphics g) {
-    	if (dragonSize < -1) return;
+    	if (dragonSize < -4) return;
     	switch (dragonSize) {
     		case 30: 
       			g.drawImage(dragonImg, size*dragon_x+15, size*dragon_y+10, this);
       			break;
-			case 0:
+			case -3:
       			int xx = size*dragon_x+50+10, yy = size*dragon_y+45+20;
       			g.setColor(Color.red);
       			g.drawLine(xx, yy, xx-dragonSize, yy-dragonSize);
@@ -617,13 +640,13 @@ class LabyrinthPanel extends JPanel implements KeyListener, Runnable {
 	}
 
   	public void dragonErase() {
-		if (dragonSize < 0) return;
+		if (dragonSize < -4) return;
     	dragonSize -= 3;
   	}
 
 	// 火球の各種メソッド定義
 	public void fireSet() {
-		fire_x = size*dragon_x-20;
+		fire_x = size*dragon_x-5;
 		fire_y = size*dragon_y+8;
 	}
 
