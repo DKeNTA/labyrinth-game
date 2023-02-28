@@ -1,4 +1,4 @@
-# Labyrinth-Game
+# labyrinth game
 ## 迷路型パネルゲーム 〜みかんを手に入れろ〜
 javaで簡易的なパネルゲームを作ったもの
 
